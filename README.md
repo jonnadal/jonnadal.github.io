@@ -3,7 +3,7 @@ Welcome to [jonnadal.github.io](https://jonnadal.github.io).
 ## Blog Posts ##
 
 - *(draft)* [ExBackup.dfy](dfy/ExBackup.html): A minimal distributed system simulation that serves as an introduction to the Dafny programming language.
-- *(draft)* [minimal-sat](js/minimal-sat.html): A minimal SAT solver.
+- *(draft)* [minimal-sat.js](js/minimal-sat.html): A minimal SAT solver.
 
 ## Blog Source ##
 
