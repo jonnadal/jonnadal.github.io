@@ -6,4 +6,4 @@ all:
 	rsync -av src/daft/docs/* ./
 
 clean:
-	rm -rf src/ docs/
+	rm -rf dfy/ js/ src/
