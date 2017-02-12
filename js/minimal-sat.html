@@ -57,7 +57,19 @@ This provides a way to easily validate our code, as an assignment can be verifie
                 <a class="pilcrow" href="#section-2">&#182;</a>
               </div>
               <h2 id="examples">Examples</h2>
-<p>Let’s start by writing a test to outline what “correct” looks like.
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-3">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-3">&#182;</a>
+              </div>
+              <p>Let’s start by writing a test to outline what “correct” looks like.
 We introduce a function that lets us embed tests in this source file, choosing to run the tests by passing a <code>--self-test</code> command line argument.
 For the underlying tests, we leverage the <a href="https://github.com/substack/tape">tape</a> library, which outputs test results in the <a href="https://en.wikipedia.org/wiki/Test_Anything_Protocol">Test Anything Protocol</a> (TAP) format.</p>
 
@@ -73,11 +85,11 @@ For the underlying tests, we leverage the <a href="https://github.com/substack/t
         </li>
         
         
-        <li id="section-3">
+        <li id="section-4">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-3">&#182;</a>
+                <a class="pilcrow" href="#section-4">&#182;</a>
               </div>
               <p>Every boolean formula can be expressed as a a conjunction of disjunctions (AKA <a href="https://en.wikipedia.org/wiki/Conjunctive_normal_form">conjunctive normal form</a>, or CNF) , and by constraining our solver to input in that form, we can avoid tokenizing, parsing (which includes handling operator precedence), and writing logic for redundant operators like logical implication.</p>
 <p>For example, the initial example</p>
@@ -130,11 +142,11 @@ testfn(solve, (t, fn) =&gt; {
         </li>
         
         
-        <li id="section-4">
+        <li id="section-5">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-4">&#182;</a>
+                <a class="pilcrow" href="#section-5">&#182;</a>
               </div>
               <h2 id="solver-implementation">Solver Implementation</h2>
 
@@ -143,20 +155,53 @@ testfn(solve, (t, fn) =&gt; {
         </li>
         
         
-        <li id="section-5">
+        <li id="section-6">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-5">&#182;</a>
+                <a class="pilcrow" href="#section-6">&#182;</a>
               </div>
-              <p>Many SAT algorithms exist, and one of the most fundamental is <a href="https://en.wikipedia.org/wiki/DPLL_algorithm">DPLL</a>:</p>
+              <p>Many SAT algorithms exist, and one of the most fundamental is <a href="https://en.wikipedia.org/wiki/DPLL_algorithm">DPLL</a>.
+We collect assignments as follows:</p>
+<ol>
+<li>Choose an unassigned variable, stopping if none are available.</li>
+<li>For each possible truth value assignment of that variable, verify that the assignment does not contradict any clauses, backtracking if both assignments contradict.</li>
+<li>Assuming an assignment does not yet contradict, recurse with a simplified problem in which the variable no longer exists, cleaning up clauses as necessary. If our recursive call succeeds, we’re done. If it fails for both <code>true</code> and <code>false</code>, we backtrack (as a different assignment of previously assigned variables might be successful).</li>
+</ol>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>
+<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">solve</span>(<span class="hljs-params">clauses, assignment = {}</span>) </span>{
+    <span class="hljs-keyword">return</span> trace(solve, <span class="hljs-built_in">arguments</span>, () =&gt; { <span class="hljs-comment">// we wrap in a helper for debugging</span>
+        <span class="hljs-keyword">const</span> v = nextVar(clauses);
+        <span class="hljs-keyword">if</span> (!v) { <span class="hljs-keyword">return</span> assignment; }
+        <span class="hljs-keyword">for</span> (<span class="hljs-keyword">const</span> value <span class="hljs-keyword">of</span> [<span class="hljs-literal">true</span>, <span class="hljs-literal">false</span>]) {
+            <span class="hljs-keyword">if</span> (canAssign(value, v, clauses)) {
+                <span class="hljs-keyword">const</span> result = solve(removeVar(value, v, clauses), newAssignment(assignment, v, value));
+                <span class="hljs-keyword">if</span> (result) { <span class="hljs-keyword">return</span> result; }
+            }
+        }
+        <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span>;
+    });
+}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-7">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-7">&#182;</a>
+              </div>
+              <p>The above implementation relies on the following four helpers:</p>
 <ol>
 <li><code>nextVar</code>: choose a variable favoring “unit” clauses with only one possible assignment;</li>
 <li><code>canAssign</code>: infer when an assignment of that variable violates any clause;</li>
 <li><code>removeVar</code>: “clean up” satisfied clauses; and</li>
-<li><code>newAssignment</code>: update a collection of assignments (which can be unwound by backtracking when all possible assignments of a variable lead to a clause violation).</li>
+<li><code>newAssignment</code>: add a variable-to-truth-value assignment to a collection of assignments.</li>
 </ol>
-<p>We start by introducing a helper for each of the above steps.</p>
 
             </div>
             
@@ -233,48 +278,26 @@ testfn(newAssignment, (t, fn) =&gt; {
         </li>
         
         
-        <li id="section-6">
+        <li id="section-8">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-6">&#182;</a>
+                <a class="pilcrow" href="#section-8">&#182;</a>
               </div>
-              <p>Now we can bring those pieces together to implement the DPLL algorithm.</p>
+              <h2 id="parsing">Parsing</h2>
 
             </div>
-            
-            <div class="content"><div class='highlight'><pre>
-<span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">solve</span>(<span class="hljs-params">clauses, assignment = {}</span>) </span>{
-    <span class="hljs-keyword">return</span> trace(solve, <span class="hljs-built_in">arguments</span>, () =&gt; { <span class="hljs-comment">// we wrap in a helper for debugging</span>
-        <span class="hljs-keyword">const</span> v = nextVar(clauses);
-        <span class="hljs-keyword">if</span> (!v) { <span class="hljs-keyword">return</span> assignment; }
-        <span class="hljs-keyword">if</span> (canAssign(<span class="hljs-literal">true</span>, v, clauses)) {
-            <span class="hljs-keyword">const</span> result = solve(removeVar(<span class="hljs-literal">true</span>, v, clauses), newAssignment(assignment, v, <span class="hljs-literal">true</span>));
-            <span class="hljs-keyword">if</span> (result) {
-                <span class="hljs-keyword">return</span> result;
-            }
-        }
-        <span class="hljs-keyword">if</span> (canAssign(<span class="hljs-literal">false</span>, v, clauses)) {
-            <span class="hljs-keyword">const</span> result = solve(removeVar(<span class="hljs-literal">false</span>, v, clauses), newAssignment(assignment, v, <span class="hljs-literal">false</span>));
-            <span class="hljs-keyword">if</span> (result) {
-                <span class="hljs-keyword">return</span> result;
-            }
-        }
-        <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span>;
-    });
-}</pre></div></div>
             
         </li>
         
         
-        <li id="section-7">
+        <li id="section-9">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-7">&#182;</a>
+                <a class="pilcrow" href="#section-9">&#182;</a>
               </div>
-              <h2 id="parsing">Parsing</h2>
-<p>The <a href="http://people.sc.fsu.edu/~jburkardt%20/data/cnf/cnf.html">DIMACS CNF format</a> specifies a common encoding for CNF expressions.
+              <p>The <a href="http://people.sc.fsu.edu/~jburkardt%20/data/cnf/cnf.html">DIMACS CNF format</a> specifies a common encoding for CNF expressions.
 By parsing this format, we can validate our implemenation against more test data and also easily compare our SAT performance with other implementations.</p>
 
             </div>
@@ -298,11 +321,11 @@ p cnf 3 2
         </li>
         
         
-        <li id="section-8">
+        <li id="section-10">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-8">&#182;</a>
+                <a class="pilcrow" href="#section-10">&#182;</a>
               </div>
               <p>First we remove comments, which are lines starting with a “c” character.</p>
 
@@ -313,11 +336,11 @@ p cnf 3 2
         </li>
         
         
-        <li id="section-9">
+        <li id="section-11">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-9">&#182;</a>
+                <a class="pilcrow" href="#section-11">&#182;</a>
               </div>
               <p>Next we extract the problem description, which indicates the number of symbols and clauses.
 For simplicity, we just throw this away as we can infer it from the rest of the file.</p>
@@ -333,11 +356,11 @@ For simplicity, we just throw this away as we can infer it from the rest of the 
         </li>
         
         
-        <li id="section-10">
+        <li id="section-12">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-10">&#182;</a>
+                <a class="pilcrow" href="#section-12">&#182;</a>
               </div>
               <p>Now we are ready to extract the clauses. Note that clauses are “0” delimited, not newline delimited.</p>
 
@@ -352,11 +375,11 @@ For simplicity, we just throw this away as we can infer it from the rest of the 
         </li>
         
         
-        <li id="section-11">
+        <li id="section-13">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-11">&#182;</a>
+                <a class="pilcrow" href="#section-13">&#182;</a>
               </div>
               <p>The clauses are encoded such that <code>-num</code> indicates that x<sub>num</sub> is false while <code>num</code> indicates x<sub>num</sub> is true.</p>
 
@@ -378,14 +401,26 @@ For simplicity, we just throw this away as we can infer it from the rest of the 
         </li>
         
         
-        <li id="section-12">
+        <li id="section-14">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-12">&#182;</a>
+                <a class="pilcrow" href="#section-14">&#182;</a>
               </div>
               <h1 id="performance">Performance</h1>
-<p>Similar to our <code>testfn</code> helper, we introduce a <code>timefn</code> helper that only runs performance tests if the program is started with a <code>--perf</code> argument.</p>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-15">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-15">&#182;</a>
+              </div>
+              <p>Similar to our <code>testfn</code> helper, we introduce a <code>timefn</code> helper that only runs performance tests if the program is started with a <code>--perf</code> argument.</p>
 
             </div>
             
@@ -409,11 +444,11 @@ function timefn(fn, impl) {
         </li>
         
         
-        <li id="section-13">
+        <li id="section-16">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-13">&#182;</a>
+                <a class="pilcrow" href="#section-16">&#182;</a>
               </div>
               <p>To stress our solver a bit, we have three example DIMACS CNF files:</p>
 <ol>
@@ -443,11 +478,11 @@ timefn(solve, (fn, time) =&gt; {
         </li>
         
         
-        <li id="section-14">
+        <li id="section-17">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-14">&#182;</a>
+                <a class="pilcrow" href="#section-17">&#182;</a>
               </div>
               <p>Two of the problems are satisfiable and take just under a second on my laptop, while one is unsatisfiable and takes just over a minute on the same hardware.
 For comparison, the industrial strength <a href="https://github.com/Z3Prover/z3">Z3</a> theorem prover can solve all three in milliseconds.
@@ -458,14 +493,26 @@ It’s clear that this minimal example has lots of room for performance improvem
         </li>
         
         
-        <li id="section-15">
+        <li id="section-18">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-15">&#182;</a>
+                <a class="pilcrow" href="#section-18">&#182;</a>
               </div>
               <h2 id="appendix-development-helpers">Appendix: Development Helpers</h2>
-<p>TAP parsers expect a leading <code>#</code> for comments, and outputing debug information to the console without that leading <code>#</code> breaks parsing.
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-19">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-19">&#182;</a>
+              </div>
+              <p>TAP parsers expect a leading <code>#</code> for comments, and outputing debug information to the console without that leading <code>#</code> breaks parsing.
 To make our debug logging slightly less verbose, we introduce another small helper, <code>debug</code>.</p>
 <p>Note that while <code>#</code> indicates a comment, nodejs TAP reporters (such as <a href="https://github.com/scottcorgan/tap-spec">tap-spec</a>) typically interpret <code>#</code> as a test name, so this helper emits a <code>##</code>, which most parsers interpret as a non-test-comment.</p>
 
@@ -484,11 +531,11 @@ To make our debug logging slightly less verbose, we introduce another small help
         </li>
         
         
-        <li id="section-16">
+        <li id="section-20">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-16">&#182;</a>
+                <a class="pilcrow" href="#section-20">&#182;</a>
               </div>
               <p>It’s also useful to be able to trace function calls, so we introduce a helper for that as well.
 Example output:</p>
