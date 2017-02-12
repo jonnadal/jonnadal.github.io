@@ -4,7 +4,7 @@ Welcome to [jonnadal.github.io](https://jonnadal.github.io).
 
 Formal Verification:
 
-- [ExBackup.dfy](ExBackup.html): An introduction to the Dafny programming language.
+- *(draft)* [ExBackup.dfy](ExBackup.html): A minimal distributed system simulation that serves as an introduction to the Dafny programming language.
 
 ## Blog Source ##
 
